@@ -12,14 +12,14 @@ global M, rho, c, N_x, N_y, b, d, e, du_x
 #Parameters
 d = 2 #Dimension
 b = 3**d #Number of directions
-N_x = 30; N_y = 8 #System size
+N_x = 45; N_y = 15 #System size
 n = 1./9. #Initial particle density
 c = 1. #Normalization squared
 rho = 1.
 M = 1.
 du_x = 0.2 #Pressure (from left to right)
 tau = 5. #Relaxation time
-t_final = 10 #Total number of iteration steps
+t_final = 25 #Total number of iteration steps
 #Initialize directions
 e = np.empty([b,d],dtype = int)
 #For d2q9
@@ -89,10 +89,22 @@ for t in range(t_final):
     #    plt.colorbar()
     #    plt.draw()
     if (t%1==0): # Visualization of x-velocity
+        plt.figure(1)
         plt.legend()
         plt.show()
         plt.clf(); plt.imshow(veloc[:,:,0].transpose(),cmap=cm.jet,label = 'x-velocity')
         plt.colorbar()
         plt.draw()
 
-
+#Get parabola
+ave_veloc = np.sum(veloc[:,:,0],axis = 0)
+y_coor = np.arange(N_y); y_coor_fit = np.arange(0,N_y-1,0.1)
+plt.figure(2)
+plt.xlabel('Average velocity: u_x')
+plt.ylabel('y')
+para_fit = np.polyfit(y_coor,ave_veloc,2)
+print(para_fit)
+fitted_curve = para_fit[0]*y_coor_fit**2 + para_fit[1]*y_coor_fit + para_fit[2]
+plt.plot(ave_veloc,y_coor,'bo',fitted_curve, y_coor_fit,'r')
+plt.legend(['simulatd data', 'fit data'])
+plt.show()
