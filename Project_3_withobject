@@ -12,14 +12,14 @@ global M, rho, c, N_x, N_y, b, d, e, du_x
 #Parameters
 d = 2 #Dimension
 b = 3**d #Number of directions
-N_x = 45; N_y = 15 #System size
+N_x = 65; N_y = 35 #System size
 n = 1./9. #Initial particle density
 c = 1. #Normalization squared
 rho = 1.
 M = 1.
 du_x = 0.2 #Pressure (from left to right)
 tau = 5. #Relaxation time
-t_final = 25 #Total number of iteration steps
+t_final = 75 #Total number of iteration steps
 #Initialize directions
 e = np.empty([b,d],dtype = int)
 #For d2q9
@@ -49,6 +49,8 @@ for x in range(left,right):
         lattice[x,y] = np.zeros(b,dtype = float)
 #Initialize boundaries
 
+
+
 #Move the density n_i to the appropriate neighbour
 def propagation(lattice):
     #Initialize a new lattice to store moved particles in
@@ -59,12 +61,22 @@ def propagation(lattice):
                 if (m+e[i,1] < 0) or (m+e[i,1] >= N_y): #Boundary at the tube wall
                     lattice_new[(l+e[i,0])%N_x, m, 8-i] += lattice[l, m, i]
                 elif (object_latt[(l+e[i,0])%N_x,(m+e[i,1])%N_y] == 1):
-                    if ((m+e[i,1] in range(lower, upper))and(l+e[i,0] in range(left, right))):
-                        lattice_new[l,m,8-i] = lattice[l,m,i]
-                    elif m+e[i,1] in range(lower, upper):
-                        lattice_new[l+e[i,0], m, 8-1] += lattice[l, m, i]                         
-                    elif l+e[i,0] in range(left, right):
-                        lattice_new[l, m+e[i,1], 8-1] += lattice[l, m, i]                   
+                    if (m <= lower or m >= upper) and (l <= left or l >= right):# Corner bounce
+                        lattice_new[l,m,8-i] += lattice[l,m,i]                    
+                    elif m <= lower or m >= upper: # Horizontal Side Bounce
+                        lattice_new[l, m+2*e[i,1], (i-e[i,1]*2)] += lattice[l, m, i]
+                    elif l <= left or l >= right: # Vertical Side Bounce
+                        lattice_new[l+2*e[i,0], m, (i-e[i,0]*6)] += lattice[l, m, i]
+                        
+##                    if (((m+e[i,1]) in range(lower, upper)) and ((l+e[i,0]) in range(left, right))):
+##                        lattice_new[l,m,8-i] += lattice[l,m,i]
+##                    elif (m+e[i,1]) in range(lower, upper): # Horizontal Side Bounce
+##                        lattice_new[l+e[i,0], m, abs(i-2)] += lattice[l, m, i]
+##                        print('bounce 1')
+##                    elif (l+e[i,0]) in range(left, right): # Vertical Side Bounce
+##                        lattice_new[l, m+e[i,1], abs(i-6)] += lattice[l, m, i]
+##                        print('bounce 2')
+                        
                 else:
                     lattice_new[(l+e[i,0])%N_x, (m+e[i,1]), i] += lattice[l, m, i]
             #Calculate the velocities at each point
@@ -81,7 +93,10 @@ def equilibrium(x,y,veloc):
 
 #Add a small velocity along the direction of the pressure gradient
 def pressure_grad(x,y,veloc):
-    veloc[x,y,0] += du_x
+    if not (x in range(left,right) and y in range(lower,upper)):
+        veloc[x,y,0] += du_x
+        if y == lower and x ==left:
+            print('hoi')
     return veloc
 
 #Relax the densities at the points inside the system
@@ -106,7 +121,7 @@ for t in range(t_final):
     #    plt.clf(); plt.imshow(np.sum(lattice,axis = 2).transpose(),cmap=cm.jet)
     #    plt.colorbar()
     #    plt.draw()
-    if (t%1==0): # Visualization of x-velocity
+    if (t%24==0): # Visualization of x-velocity
         plt.figure(1)
         plt.legend()
         plt.show()
