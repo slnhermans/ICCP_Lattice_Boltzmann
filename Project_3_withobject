@@ -36,6 +36,17 @@ veloc = np.zeros([N_x,N_y,2],dtype = float)
 weights = 1./36. * np.ones(b,dtype = float)
 weights[4] = 4./9.; weights[1] = 1./9. ; weights[3] = 1./9. ; weights[5] = 1./9. ; weights[7] = 1./9. ;
 
+#Defining an object
+lower = 6
+upper = 8
+left = 20
+right = 25
+
+object_latt = np.zeros([N_x,N_y],dtype = int)
+for x in range(left,right):
+    for y in range(lower,upper):
+        object_latt[x,y] = 1
+        lattice[x,y] = np.zeros(b,dtype = float)
 #Initialize boundaries
 
 #Move the density n_i to the appropriate neighbour
@@ -47,6 +58,13 @@ def propagation(lattice):
             for i in range(b):
                 if (m+e[i,1] < 0) or (m+e[i,1] >= N_y): #Boundary at the tube wall
                     lattice_new[(l+e[i,0])%N_x, m, 8-i] += lattice[l, m, i]
+                elif (object_latt[(l+e[i,0])%N_x,(m+e[i,1])%N_y] == 1):
+                    if ((m+e[i,1] in range(lower, upper))and(l+e[i,0] in range(left, right))):
+                        lattice_new[l,m,8-i] = lattice[l,m,i]
+                    elif m+e[i,1] in range(lower, upper):
+                        lattice_new[l+e[i,0], m, 8-1] += lattice[l, m, i]                         
+                    elif l+e[i,0] in range(left, right):
+                        lattice_new[l, m+e[i,1], 8-1] += lattice[l, m, i]                   
                 else:
                     lattice_new[(l+e[i,0])%N_x, (m+e[i,1]), i] += lattice[l, m, i]
             #Calculate the velocities at each point
@@ -106,5 +124,4 @@ para_fit = np.polyfit(y_coor,ave_veloc,2)
 print(para_fit)
 fitted_curve = para_fit[0]*y_coor_fit**2 + para_fit[1]*y_coor_fit + para_fit[2]
 plt.plot(ave_veloc,y_coor,'bo',fitted_curve, y_coor_fit,'r')
-plt.legend(['simulatd data', 'fit data'])
 plt.show()
